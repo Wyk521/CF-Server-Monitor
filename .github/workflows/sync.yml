@@ -32,6 +32,16 @@ jobs:
           # Set test_mode true to run tests instead of the true action!!
           test_mode: false
 
+      # GITHUB_TOKEN 推送的合并提交不会触发 on: push 工作流（GitHub 2023 年起规则），
+      # 因此同步到新提交后需要显式触发部署；workflow_dispatch 不受该限制。
+      - name: 🚀 Trigger redeploy
+        if: steps.sync.outputs.has_new_commits == 'true'
+        run: |
+          gh workflow run "Deploy to Cloudflare Workers" --ref main
+          gh workflow run "Deploy to GitHub Pages" --ref main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Sync check
         if: failure()
         run: |
